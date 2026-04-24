@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ePractice – Bulk Payment</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --brand: #c026d3;
+    --brand-light: #fdf4ff;
+    --navy: #1e1b4b;
+    --sidebar-bg: #0f0c29;
+    --bg: #f4f6f9;
+    --white: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --muted: #64748b;
+    --green: #10b981;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --allocated-badge: #d1fae5;
+    --allocated-text: #065f46;
+    --input-bg: #f8fafc;
+    --progress: #1e1b4b;
+    --shortfall-bg: #fff7ed;
+    --credit-bg: #fef9c3;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 52px;
+    background: var(--sidebar-bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .sidebar-logo {
+    width: 32px; height: 32px;
+    background: var(--brand);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 10px;
+    font-size: 16px; color: #fff; font-weight: 700;
+  }
+  .sidebar-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.45);
+    cursor: pointer;
+    transition: background .15s;
+    font-size: 15px;
+  }
+  .sidebar-icon:hover, .sidebar-icon.active { background: rgba(255,255,255,0.1); color: #fff; }
+  .sidebar-icon.active { color: var(--brand); }
+
+  /* ── Main ── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Topbar ── */
+  .topbar {
+    height: 48px;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 20px;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .topbar-site {
+    font-size: 12px; color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .topbar-site span { color: var(--text); font-weight: 500; }
+  .topbar-icon {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: var(--muted); cursor: pointer;
+  }
+  .topbar-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--brand);
+    color: #fff; font-size: 12px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ── Content Scroll ── */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+  }
+
+  /* ── Back row ── */
+  .back-row {
+    padding: 14px 24px 8px;
+    display: flex; align-items: center; gap: 6px;
+    color: var(--muted); font-size: 12px; cursor: pointer;
+  }
+  .back-row:hover { color: var(--text); }
+
+  /* ── Payment Header Card ── */
+  .payment-header {
+    margin: 0 24px 14px;
+    display: flex; gap: 14px;
+  }
+  .payment-card {
+    flex: 1;
+    background: var(--white);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .payment-card-left { display: flex; flex-direction: column; gap: 2px; }
+  .payment-label { font-size: 11px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .4px; }
+  .payment-org { font-size: 15px; font-weight: 600; color: var(--text); margin: 2px 0; }
+  .payment-date { font-size: 11px; color: var(--muted); }
+  .badge-allocated {
+    display: inline-flex; align-items: center;
+    background: var(--allocated-badge); color: var(--allocated-text);
+    border-radius: 20px; font-size: 11px; font-weight: 600;
+    padding: 3px 10px; margin-top: 4px;
+  }
+  .payment-card-right { text-align: right; }
+  .payment-amount { font-size: 22px; font-weight: 700; color: var(--text); }
+  .payment-method { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .payment-edit { font-size: 11px; color: var(--brand); cursor: pointer; margin-top: 4px; display: block; }
+
+  .notes-card {
+    width: 280px;
+    background: var(--white);
+    border: 1.5px dashed var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+  }
+  .notes-title { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .notes-empty { font-size: 12px; color: var(--muted); }
+
+  /* ── Allocation bar row ── */
+  .alloc-row {
+    margin: 0 24px 12px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 20px;
+  }
+  .alloc-summary {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .alloc-amounts {
+    display: flex; align-items: center; gap: 6px; font-size: 13px;
+  }
+  .alloc-amount-val { font-weight: 700; color: var(--text); }
+  .alloc-label { color: var(--muted); font-size: 11px; }
+  .alloc-total { font-weight: 700; color: var(--text); }
+  .alloc-actions { display: flex; gap: 8px; }
+  .btn {
+    padding: 6px 16px; border-radius: 7px; font-size: 12px; font-weight: 500;
+    cursor: pointer; border: 1px solid var(--border); background: var(--white);
+    color: var(--text); font-family: inherit;
+    transition: background .15s;
+  }
+  .btn:hover { background: var(--bg); }
+  .btn-dark {
+    background: var(--navy); color: #fff; border-color: var(--navy);
+  }
+  .btn-dark:hover { background: #2d2a6e; }
+  .btn-outline-dark {
+    background: var(--white); color: var(--navy); border-color: var(--navy);
+  }
+  .btn-disabled {
+    background: #e2e8f0; color: var(--muted); border-color: #e2e8f0; cursor: default;
+  }
+
+  .progress-bar-wrap {
+    background: #e2e8f0; border-radius: 4px; height: 8px; overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%; background: var(--progress); border-radius: 4px;
+    width: 100%;
+  }
+  .alloc-note {
+    font-size: 11px; color: var(--muted); margin-top: 6px;
+  }
+
+  /* ── Split panes ── */
+  .split-panes {
+    margin: 0 24px 24px;
+    display: flex; gap: 14px;
+    min-height: 0;
+  }
+
+  .pane {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .pane-left { flex: 1; }
+  .pane-right { width: 46%; }
+
+  .pane-header {
+    padding: 14px 16px 10px;
+    font-size: 13px; font-weight: 600; color: var(--text);
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pane-toolbar {
+    padding: 10px 16px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .checkbox-wrap { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  input[type=checkbox] { accent-color: var(--brand); width: 13px; height: 13px; }
+  .spacer { flex: 1; }
+  .search-input {
+    height: 30px; border: 1px solid var(--border); border-radius: 6px;
+    padding: 0 10px; font-size: 12px; font-family: inherit;
+    background: var(--input-bg); color: var(--text); outline: none; width: 130px;
+  }
+  .search-input::placeholder { color: #b0bec5; }
+  .refresh-btn {
+    width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--white); display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--muted); font-size: 13px;
+  }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    text-align: left; padding: 8px 16px;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: background .12s, color .12s;
+  }
+  thead th:hover { background: #f1f5f9; color: var(--text); }
+  thead th.sort-asc, thead th.sort-desc { color: var(--navy); }
+  thead th .sort-icon { margin-left: 4px; font-size: 10px; opacity: 0.35; }
+  thead th.sort-asc .sort-icon, thead th.sort-desc .sort-icon { opacity: 1; }
+  thead th:not([data-sort]) { cursor: default; }
+  tbody tr { border-bottom: 1px solid #f1f5f9; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #fafbff; }
+  tbody td { padding: 9px 16px; font-size: 12px; color: var(--text); vertical-align: middle; }
+  .invoice-num { font-weight: 600; font-size: 12px; }
+  .invoice-name { color: var(--muted); font-size: 11px; }
+  .td-check { width: 32px; }
+
+  /* Right pane amounts */
+  .td-allocated {
+    font-weight: 600; font-size: 12px;
+    padding: 6px 14px 6px 8px;
+  }
+  .alloc-positive {
+    background: #f0fdf4; color: #166534;
+    border-radius: 5px; padding: 3px 8px; display: inline-block;
+  }
+  .alloc-negative {
+    background: #fff1f2; color: #b91c1c;
+    border-radius: 5px; padding: 3px 8px; display: inline-block;
+  }
+  .alloc-shortfall {
+    background: var(--shortfall-bg); color: #92400e;
+    border-radius: 5px; padding: 3px 8px; display: inline-block;
+  }
+
+  /* Unassigned credit */
+  .btn-add-credit {
+    border: 1.5px dashed #cbd5e1; background: #f8fafc;
+    border-radius: 8px; padding: 6px 18px;
+    font-size: 12px; color: var(--muted); cursor: pointer; font-family: inherit;
+  }
+  .btn-add-credit:hover { background: #f1f5f9; }
+
+  .right-search-row {
+    padding: 10px 16px;
+    display: flex; justify-content: flex-end;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pane-scroll { overflow-y: auto; max-height: 340px; }
+
+  /* ── Accordion ── */
+  .accordion { border-bottom: 1px solid var(--border); }
+  .accordion:last-child { border-bottom: none; }
+  .accordion-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 11px 16px;
+    cursor: pointer;
+    background: #f8fafc;
+    border-bottom: 1px solid transparent;
+    user-select: none;
+    transition: background .15s;
+  }
+  .accordion-header:hover { background: #f1f5f9; }
+  .accordion.open .accordion-header {
+    background: var(--white);
+    border-bottom-color: var(--border);
+  }
+  .accordion-title {
+    font-size: 12px; font-weight: 600; color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .accordion-badge {
+    background: var(--navy); color: #fff;
+    border-radius: 20px; font-size: 10px; font-weight: 600;
+    padding: 1px 7px;
+  }
+  .accordion-badge.green { background: #10b981; }
+  .accordion-badge.red   { background: #ef4444; }
+  .accordion-badge.amber { background: #f59e0b; color: #1e1b4b; }
+  .accordion-chevron {
+    font-size: 11px; color: var(--muted);
+    transition: transform .2s;
+    display: inline-block;
+  }
+  .accordion.open .accordion-chevron { transform: rotate(180deg); }
+  .accordion-body {
+    display: none;
+  }
+  .accordion.open .accordion-body { display: block; }
+  .accordion-empty {
+    padding: 18px 16px;
+    font-size: 12px; color: var(--muted); text-align: center;
+  }
+  .accordion-footer {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: center;
+  }
+
+  /* ── Pagination ── */
+  .pagination-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 14px;
+    border-top: 1px solid var(--border);
+    background: #fafbff;
+  }
+  .pagination-info { font-size: 11px; color: var(--muted); }
+  .pagination-controls { display: flex; align-items: center; gap: 3px; }
+  .pg-btn {
+    min-width: 26px; height: 26px;
+    border: 1px solid var(--border); border-radius: 5px;
+    background: var(--white); color: var(--text);
+    font-size: 11px; font-family: inherit; font-weight: 500;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    padding: 0 6px;
+    transition: background .12s, border-color .12s;
+  }
+  .pg-btn:hover { background: var(--bg); border-color: #cbd5e1; }
+  .pg-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .pg-btn.arrow { font-size: 12px; color: var(--muted); }
+
+  .btn-add-cd {
+    padding: 4px 12px; border-radius: 6px;
+    border: 1.5px solid var(--brand); background: var(--brand-light);
+    color: var(--brand); font-size: 11px; font-weight: 600;
+    font-family: inherit; cursor: pointer;
+    transition: background .15s, color .15s;
+    white-space: nowrap;
+  }
+  .btn-add-cd:hover { background: var(--brand); color: #fff; }
+
+  .acc-search-bar {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--white);
+    display: flex;
+    justify-content: flex-end;
+  }
+  .acc-search {
+    height: 28px; border: 1px solid var(--border); border-radius: 5px;
+    padding: 0 10px; font-size: 12px; font-family: inherit;
+    background: var(--input-bg); color: var(--text); outline: none; width: 220px;
+    transition: border-color .15s;
+  }
+  .acc-search:focus { border-color: var(--brand); }
+  .acc-search::placeholder { color: #b0bec5; }
+
+  /* ── Allocated input ── */
+  .alloc-input-wrap {
+    display: flex; align-items: center;
+    border: 1px solid var(--border); border-radius: 6px;
+    background: var(--white); overflow: hidden;
+    width: 88px;
+    transition: border-color .15s;
+  }
+  .alloc-input-wrap:focus-within { border-color: var(--brand); box-shadow: 0 0 0 2px #f5d0fe44; }
+  .alloc-input-prefix {
+    padding: 0 6px;
+    font-size: 12px; color: var(--muted);
+    background: #f8fafc;
+    border-right: 1px solid var(--border);
+    height: 28px; display: flex; align-items: center;
+    flex-shrink: 0;
+  }
+  .alloc-input {
+    border: none; outline: none;
+    font-size: 12px; font-family: inherit;
+    width: 100%; padding: 0 6px;
+    height: 28px; background: transparent;
+    color: var(--text);
+  }
+
+  /* scrollbar */
+  .pane-scroll::-webkit-scrollbar { width: 4px; }
+  .pane-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">e</div>
+  <div class="sidebar-icon active">⊞</div>
+  <div class="sidebar-icon">↩</div>
+  <div class="sidebar-icon">📋</div>
+  <div class="sidebar-icon">🔔</div>
+  <div class="sidebar-icon" style="margin-top:auto">👤</div>
+  <div class="sidebar-icon">＋</div>
+</aside>
+
+<!-- ── Main ── -->
+<div class="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-site">Site: <span>B6 Test [12312312] (HC12803)</span> ▾</div>
+    <div class="topbar-avatar">B</div>
+    <div class="topbar-icon">☽</div>
+    <div class="topbar-icon">⊡</div>
+  </div>
+
+  <!-- Scrollable content -->
+  <div class="content">
+
+    <!-- Back -->
+    <div class="back-row">← &nbsp;Back to Bulk payments</div>
+
+    <!-- Payment Header -->
+    <div class="payment-header">
+      <div class="payment-card">
+        <div class="payment-card-left">
+          <span class="payment-label">Bulk payment</span>
+          <span class="payment-org">Trust In Health</span>
+          <span class="payment-date">Payment date 23/04/2026</span>
+          <span class="badge-allocated">✔ Unallocated</span>
+        </div>
+        <div class="payment-card-right">
+          <div class="payment-amount">£50.00</div>
+          <div class="payment-method">BACS</div>
+          <a class="payment-edit">Edit payment</a>
+        </div>
+      </div>
+      <div class="notes-card">
+        <div class="notes-title">Notes</div>
+        <div class="notes-empty">No notes added</div>
+      </div>
+    </div>
+
+    <!-- Allocation bar -->
+    <div class="alloc-row">
+      <div class="alloc-summary">
+        <div class="alloc-amounts">
+          <span class="alloc-amount-val">£150.00</span>
+          <span class="alloc-label">Allocated</span>
+          <span style="color:var(--muted);margin:0 2px">out of</span>
+          <span class="alloc-total">£150.00</span>
+        </div>
+        <div class="alloc-actions">
+          <button class="btn">Back</button>
+          <button class="btn btn-dark">Save as Draft</button>
+          <button class="btn btn-outline-dark">Reconcile</button>
+        </div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <div class="alloc-note">All funds have been fully allocated. £150.00 applied to 2 invoices, with £100.00 reversed across 1 invoice.</div>
+    </div>
+
+    <!-- Split panes -->
+    <div class="split-panes">
+
+      <!-- Left pane: Select invoices -->
+      <div class="pane pane-left">
+        <div class="pane-header">Select invoices</div>
+        <div class="pane-toolbar">
+          <label class="checkbox-wrap"><input type="checkbox" /> Fully Paid Invoices</label>
+          <div class="spacer"></div>
+          <input class="search-input" type="text" placeholder="Invoice no." />
+          <input class="search-input" type="text" placeholder="Last name" />
+          <div class="refresh-btn">⟳</div>
+        </div>
+        <div class="pane-scroll" style="max-height:none;overflow:visible">
+          <table>
+            <thead>
+              <tr>
+                <th class="td-check"></th>
+                <th data-sort="invoice">Invoice <span class="sort-icon">↕</span></th>
+                <th data-sort="date">Invoice date <span class="sort-icon">↕</span></th>
+                <th data-sort="total">Invoice total <span class="sort-icon">↕</span></th>
+                <th data-sort="outstanding">Outstanding amount <span class="sort-icon">↕</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="checkbox" /></td>
+                <td><div class="invoice-num">876500574</div><div class="invoice-name">Narendra Modi</div></td>
+                <td>12/11/2025</td><td>£100.00</td><td>£5.00</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" checked /></td>
+                <td><div class="invoice-num">876978</div><div class="invoice-name">Spiderman Peter</div></td>
+                <td>22/11/2025</td><td>£200.00</td><td>£8.00</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" checked /></td>
+                <td><div class="invoice-num">876983</div><div class="invoice-name">Spiderman Peter</div></td>
+                <td>22/11/2025</td><td>£200.00</td><td>£270.00</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" checked /></td>
+                <td><div class="invoice-num">876986</div><div class="invoice-name">Spiderman Peter</div></td>
+                <td>22/11/2025</td><td>£200.00</td><td>£89.00</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" /></td>
+                <td><div class="invoice-num">876987</div><div class="invoice-name">Spiderman Peter</div></td>
+                <td>22/11/2025</td><td>£1,437.00</td><td>£680.00</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" /></td>
+                <td><div class="invoice-num">876992</div><div class="invoice-name">Spiderman Peter</div></td>
+                <td>22/11/2025</td><td>£148.00</td><td>£148.00</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" /></td>
+                <td><div class="invoice-num">8761016</div><div class="invoice-name">Spiderman Peter</div></td>
+                <td>22/11/2025</td><td>£890.00</td><td>£889.00</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" /></td>
+                <td><div class="invoice-num">8761032</div><div class="invoice-name">Spiderman Peter</div></td>
+                <td>23/11/2025</td><td>£1,030.00</td><td>£890.00</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" /></td>
+                <td><div class="invoice-num">8761056</div><div class="invoice-name">Spiderman Peter</div></td>
+                <td>24/11/2025</td><td>£500.00</td><td>£35.00</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" /></td>
+                <td><div class="invoice-num">8761061</div><div class="invoice-name">Spiderman Peter</div></td>
+                <td>24/11/2025</td><td>£200.00</td><td>£199.00</td>
+              </tr>
+            </tbody>
+          </table>
+          <!-- Pagination: Left pane -->
+          <div class="pagination-bar">
+            <span class="pagination-info">Showing 1–10 of 24</span>
+            <div class="pagination-controls">
+              <button class="pg-btn arrow">‹</button>
+              <button class="pg-btn active">1</button>
+              <button class="pg-btn">2</button>
+              <button class="pg-btn">3</button>
+              <span style="font-size:11px;color:var(--muted);padding:0 2px">…</span>
+              <button class="pg-btn">24</button>
+              <button class="pg-btn arrow">›</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right pane: Allocate -->
+      <div class="pane pane-right" style="display:flex;flex-direction:column;overflow:hidden">
+        <div class="pane-header">
+          Allocate amount to selected invoices
+        </div>
+
+        <div style="overflow-y:auto;flex:1">
+
+          <!-- Accordion 1: Unsaved Payments -->
+          <div class="accordion" id="acc-unsaved">
+            <div class="accordion-header" onclick="toggleAccordion('acc-unsaved')">
+              <div class="accordion-title">
+                Unsaved Payments
+                <span class="accordion-badge amber">8</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <button class="btn-add-cd" onclick="event.stopPropagation()">+ Add Credit / Debit</button>
+                <span class="accordion-chevron">▼</span>
+              </div>
+            </div>
+            <div class="accordion-body">
+              <div class="acc-search-bar">
+                <input class="acc-search" type="text" placeholder="Search..." oninput="filterTable(this,'unsaved-tbody')" />
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th data-sort="invoice">Invoice <span class="sort-icon">↕</span></th>
+                    <th data-sort="date">Invoice date <span class="sort-icon">↕</span></th>
+                    <th data-sort="outstanding">Outstanding <span class="sort-icon">↕</span></th>
+                    <th data-sort="allocated">Allocated amount <span class="sort-icon">↕</span></th>
+                  </tr>
+                </thead>
+                <tbody id="unsaved-tbody">
+                  <tr>
+                    <td><div class="invoice-num">876978</div><div class="invoice-name">Spiderman Peter</div></td>
+                    <td>22/11/2025</td><td>£8.00</td>
+                    <td class="td-allocated"><div class="alloc-input-wrap"><span class="alloc-input-prefix">£</span><input class="alloc-input" type="number" value="50.00" min="0" step="0.01" /></div></td>
+                  </tr>
+                  <tr>
+                    <td><div class="invoice-num">876983</div><div class="invoice-name">Spiderman Peter</div></td>
+                    <td>22/11/2025</td><td>£270.00</td>
+                    <td class="td-allocated"><div class="alloc-input-wrap"><span class="alloc-input-prefix">£</span><input class="alloc-input" type="number" value="100.00" min="0" step="0.01" /></div></td>
+                  </tr>
+                  <tr>
+                    <td><div class="invoice-num">876986</div><div class="invoice-name">Spiderman Peter</div></td>
+                    <td>22/11/2025</td><td>£89.00</td>
+                    <td class="td-allocated"><div class="alloc-input-wrap"><span class="alloc-input-prefix">£</span><input class="alloc-input" type="number" value="89.00" min="0" step="0.01" /></div></td>
+                  </tr>
+                  <tr>
+                    <td><div class="invoice-num">876987</div><div class="invoice-name">Spiderman Peter</div></td>
+                    <td>22/11/2025</td><td>£680.00</td>
+                    <td class="td-allocated"><div class="alloc-input-wrap"><span class="alloc-input-prefix">£</span><input class="alloc-input" type="number" value="0.00" min="0" step="0.01" /></div></td>
+                  </tr>
+                  <tr>
+                    <td><div class="invoice-num">876992</div><div class="invoice-name">Spiderman Peter</div></td>
+                    <td>22/11/2025</td><td>£148.00</td>
+                    <td class="td-allocated"><div class="alloc-input-wrap"><span class="alloc-input-prefix">£</span><input class="alloc-input" type="number" value="0.00" min="0" step="0.01" /></div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Accordion 2: Payment Details -->
+          <div class="accordion open" id="acc-details">
+            <div class="accordion-header" onclick="toggleAccordion('acc-details')">
+              <div class="accordion-title">
+                Payment Details
+                <span class="accordion-badge green">6</span>
+              </div>
+              <span class="accordion-chevron">▼</span>
+            </div>
+            <div class="accordion-body">
+              <div class="acc-search-bar">
+                <input class="acc-search" type="text" placeholder="Search..." oninput="filterTable(this,'details-tbody')" />
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th data-sort="invoice">Invoice <span class="sort-icon">↕</span></th>
+                    <th data-sort="date">Invoice date <span class="sort-icon">↕</span></th>
+                    <th data-sort="total">Invoice total <span class="sort-icon">↕</span></th>
+                    <th data-sort="outstanding">Outstanding <span class="sort-icon">↕</span></th>
+                    <th data-sort="allocated">Allocated <span class="sort-icon">↕</span></th>
+                  </tr>
+                </thead>
+                <tbody id="details-tbody">
+                  <tr>
+                    <td><div class="invoice-num">876978</div><div class="invoice-name">Spiderman Peter</div></td>
+                    <td>22/11/2025</td><td>£200.00</td><td>£8.00</td>
+                    <td class="td-allocated"><span class="alloc-positive">£50.00</span></td>
+                  </tr>
+                  <tr>
+                    <td><div class="invoice-num">876986</div><div class="invoice-name">Spiderman Peter</div></td>
+                    <td>22/11/2025</td><td>£200.00</td><td>£89.00</td>
+                    <td class="td-allocated"><span class="alloc-positive">£100.00</span></td>
+                  </tr>
+                  <tr>
+                    <td><div class="invoice-num">876983</div><div class="invoice-name">Spiderman Peter</div></td>
+                    <td>22/11/2025</td><td>£200.00</td><td>£270.00</td>
+                    <td class="td-allocated"><span class="alloc-negative">-£100.00</span></td>
+                  </tr>
+                  <tr>
+                    <td><div class="invoice-num">8761032</div><div class="invoice-name">Spiderman Peter</div></td>
+                    <td>23/11/2025</td><td>£1,030.00</td><td>£890.00</td>
+                    <td class="td-allocated"><span class="alloc-shortfall">£200.00</span></td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="pagination-bar">
+                <span class="pagination-info">Showing 1–4 of 6</span>
+                <div class="pagination-controls">
+                  <button class="pg-btn arrow">‹</button>
+                  <button class="pg-btn active">1</button>
+                  <button class="pg-btn">2</button>
+                  <button class="pg-btn arrow">›</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Accordion 3: Unassign Credit/Debit -->
+          <div class="accordion" id="acc-credit">
+            <div class="accordion-header" onclick="toggleAccordion('acc-credit')">
+              <div class="accordion-title">
+                Unassign Credit / Debit
+                <span class="accordion-badge red">3</span>
+              </div>
+              <span class="accordion-chevron">▼</span>
+            </div>
+            <div class="accordion-body">
+              <div class="acc-search-bar">
+                <input class="acc-search" type="text" placeholder="Search..." oninput="filterTable(this,'credit-tbody')" />
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th data-sort="type">Type <span class="sort-icon">↕</span></th>
+                    <th data-sort="amount">Amount <span class="sort-icon">↕</span></th>
+                    <th data-sort="description">Description <span class="sort-icon">↕</span></th>
+                  </tr>
+                </thead>
+                <tbody id="credit-tbody">
+                  <tr>
+                    <td style="color:var(--muted);font-size:11px">Credit</td>
+                    <td><span class="alloc-positive">£150.00</span></td>
+                    <td style="color:var(--muted);font-size:11px">Unassigned credit from Spiderman Peter</td>
+                  </tr>
+                  <tr>
+                    <td style="color:var(--muted);font-size:11px">Debit</td>
+                    <td><span class="alloc-negative">-£75.00</span></td>
+                    <td style="color:var(--muted);font-size:11px">Pending debit adjustment for Narendra Modi</td>
+                  </tr>
+                  <tr>
+                    <td style="color:var(--muted);font-size:11px">Credit</td>
+                    <td><span class="alloc-positive">£60.00</span></td>
+                    <td style="color:var(--muted);font-size:11px">Overpayment credit — Spiderman Peter</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="pagination-bar">
+                <span class="pagination-info">Showing 1–3 of 3</span>
+                <div class="pagination-controls">
+                  <button class="pg-btn arrow">‹</button>
+                  <button class="pg-btn active">1</button>
+                  <button class="pg-btn arrow">›</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+  // ── Accordion: one open at a time ──
+  function toggleAccordion(id) {
+    document.querySelectorAll('.accordion').forEach(acc => {
+      acc.classList[acc.id === id ? 'toggle' : 'remove']('open');
+    });
+  }
+
+  // ── Table sorting ──
+  document.querySelectorAll('thead th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+      const thead = th.closest('thead');
+      const tbody = th.closest('table').querySelector('tbody');
+      const ths   = Array.from(thead.querySelectorAll('th[data-sort]'));
+      const colIdx = th.closest('tr').children.length === ths.length
+        ? ths.indexOf(th)
+        : Array.from(th.closest('tr').children).indexOf(th);
+
+      const isAsc = th.classList.contains('sort-asc');
+      // Reset all headers in this table
+      ths.forEach(h => {
+        h.classList.remove('sort-asc','sort-desc');
+        h.querySelector('.sort-icon').textContent = '↕';
+      });
+
+      const dir = isAsc ? 'desc' : 'asc';
+      th.classList.add(dir === 'asc' ? 'sort-asc' : 'sort-desc');
+      th.querySelector('.sort-icon').textContent = dir === 'asc' ? '↑' : '↓';
+
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      rows.sort((a, b) => {
+        const aCell = a.children[colIdx];
+        const bCell = b.children[colIdx];
+        const aVal  = getCellValue(aCell);
+        const bVal  = getCellValue(bCell);
+        if (!isNaN(aVal) && !isNaN(bVal)) return dir === 'asc' ? aVal - bVal : bVal - aVal;
+        return dir === 'asc' ? String(aVal).localeCompare(String(bVal)) : String(bVal).localeCompare(String(aVal));
+      });
+      rows.forEach(r => tbody.appendChild(r));
+    });
+  });
+
+  function filterTable(input, tbodyId) {
+    const q = input.value.toLowerCase();
+    document.querySelectorAll(`#${tbodyId} tr`).forEach(row => {
+      row.style.display = row.innerText.toLowerCase().includes(q) ? '' : 'none';
+    });
+  }
+
+  function getCellValue(cell) {
+    if (!cell) return '';
+    const inp = cell.querySelector('input[type=number]');
+    if (inp) return parseFloat(inp.value) || 0;
+    const text = cell.innerText.replace(/[£,]/g, '').trim();
+    const num  = parseFloat(text);
+    return isNaN(num) ? text : num;
+  }
+</script>
+</body>
+</html>
